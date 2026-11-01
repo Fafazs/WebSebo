@@ -1,25 +1,38 @@
 # WebSebo
 
 ## Description
-WebSebo is a mobile application that connects informal used book sellers with passionate readers. It acts as a digital catalog to give visibility to local independent sellers. To keep the traditional and friendly negotiation style, all trades are closed directly via WhatsApp, while the app ensures a safe environment with interaction history and an anti-fraud reporting system.
+WebSebo is a mobile application developed in React Native (Expo) that connects informal used book sellers (independent "sebeiros") with passionate readers. It acts as a specialized digital catalog to give organic visibility to local small-scale sellers. To preserve the traditional and friendly neighbourhood book culture, all business negotiations are completed directly via WhatsApp, while the platform ensures a secure environment through an immutable interaction history and an anti-fraud reporting mechanism.
 
 ## Features
-- **User Authentication:** Login, registration, and password recovery for all users.
-- **Verified Seller Accounts (KYC):** Users can upgrade to "Seller" by validating their ID (CPF).
-- **Store & Inventory Management:** Sellers can easily create, read, update, and delete (CRUD) their book listings and store profile.
-- **AI-Powered Synopsis:** Automatically generates book summaries and category tags using Google Gemini AI.
-- **Smart Feed & Search:** Find books by title, author, category, or physical proximity (GPS/Location).
-- **WhatsApp Integration:** Direct redirect to the seller's WhatsApp with an automatic snapshot saved in the reader's history.
-- **Security & Reporting:** Persistent interaction history that allows readers to report fraudulent sellers even if the listing is deleted.
+- **User Authentication:** Universal registration, secure login, and password recovery managed via Firebase Authentication (RF02, RF04, RF05).
+- **Verified Seller Accounts (KYC):** Users can upgrade to "Seller" status by providing their CPF and accepting legal responsibility terms (RF06, RNF02).
+- **Store & Inventory Management (CRUD):** Sellers can fully create, read, update, and delete book listings and store profiles (RF07, RF08).
+- **AI-Powered Synopsis:** Integration with Google AI Studio (Gemini API) to automatically generate book summaries and literary categories from titles and authors (RF09).
+- **Smart Feed & Regionalized Search:** Main vitrine displaying available books with search filters by title, author, category, and city/neighborhood location (RF10, RNF01).
+- **WhatsApp Integration & Snapshots:** Direct redirection to the seller's WhatsApp with a simultaneous immutable snapshot saved to the reader's history to ensure evidence retention (RF11, RNF03).
+- **Security & Persistent Reporting:** Interaction history allowing readers to report fraudulent sellers at any time, even if the original book listing is deleted, triggering automatic suspension after repeated reports (RF12, RF13, RF14, RNF06).
 
-## Technologies
-- **Frontend:** React Native (compatible with Android and iOS)
-- **Backend/Database:** Firebase (Authentication & Firestore / Realtime Database)
-- **Artificial Intelligence:** Google AI Studio (Gemini API)
+## Technologies & Architecture
+- **Frontend Framework:** React Native with Expo (Managed Workflow) for cross-platform compatibility (Android and iOS).
+- **Backend & Persistence:** Firebase Auth, Firestore Database, and Firebase Storage.
+- **Artificial Intelligence:** Google AI Studio (Gemini 2.5 Flash API).
+
 
 ## How to Run
-1. Clone this repository to your local machine.
-2. Open the terminal in the project folder and run `npm install` (or `yarn install`) to install all dependencies.
-3. Configure your Firebase credentials in the environment setup.
-4. Add your Google Gemini API Key to the environment variables.
-5. Run the application on an emulator or physical device using `npm run android` (for Android) or `npm run ios` (for iOS).
+1. Clone this repository to your local machine:
+   ```bash
+   git clone <REPOSITORY_URL>
+   cd SeboOnline
+   ```
+2. Install all required project dependencies:
+   ```bash
+   npm install
+   ```
+3. Set up your environment variables:
+   - Create an `env.js` file inside `src/config/` (using `src/config/env.example.js` as a template).
+   - Fill in your Firebase web credentials and Google Gemini API key.
+4. Start the application development server using Expo:
+   ```bash
+   npx expo start -c
+   ```
+5. Scan the generated QR code using the **Expo Go** app on your physical mobile device, or press `a` to open it in an Android emulator.
