@@ -4,13 +4,13 @@
 WebSebo is a mobile application developed in React Native (Expo) that connects informal used book sellers (independent "sebeiros") with passionate readers. It acts as a specialized digital catalog to give organic visibility to local small-scale sellers. To preserve the traditional and friendly neighbourhood book culture, all business negotiations are completed directly via WhatsApp, while the platform ensures a secure environment through an immutable interaction history and an anti-fraud reporting mechanism.
 
 ## Features
-- **User Authentication:** Universal registration, secure login, and password recovery managed via Firebase Authentication (RF02, RF04, RF05).
-- **Verified Seller Accounts (KYC):** Users can upgrade to "Seller" status by providing their CPF and accepting legal responsibility terms (RF06, RNF02).
-- **Store & Inventory Management (CRUD):** Sellers can fully create, read, update, and delete book listings and store profiles (RF07, RF08).
-- **AI-Powered Synopsis:** Integration with Google AI Studio (Gemini API) to automatically generate book summaries and literary categories from titles and authors (RF09).
-- **Smart Feed & Regionalized Search:** Main vitrine displaying available books with search filters by title, author, category, and city/neighborhood location (RF10, RNF01).
-- **WhatsApp Integration & Snapshots:** Direct redirection to the seller's WhatsApp with a simultaneous immutable snapshot saved to the reader's history to ensure evidence retention (RF11, RNF03).
-- **Security & Persistent Reporting:** Interaction history allowing readers to report fraudulent sellers at any time, even if the original book listing is deleted, triggering automatic suspension after repeated reports (RF12, RF13, RF14, RNF06).
+- **User Authentication:** Universal registration, secure login, and password recovery managed via Firebase Authentication.
+- **Verified Seller Accounts (KYC):** Users can upgrade to "Seller" status by providing their CPF and accepting legal responsibility terms.
+- **Store & Inventory Management (CRUD):** Sellers can fully create, read, update, and delete book listings and store profiles.
+- **AI-Powered Synopsis:** Integration with Google AI Studio (Gemini API) to automatically generate book summaries and literary categories from titles and authors.
+- **Smart Feed & Regionalized Search:** Main vitrine displaying available books with search filters by title, author, category, and city/neighborhood location.
+- **WhatsApp Integration & Snapshots:** Direct redirection to the seller's WhatsApp with a simultaneous immutable snapshot saved to the reader's history to ensure evidence retention.
+- **Security & Persistent Reporting:** Interaction history allowing readers to report fraudulent sellers at any time, even if the original book listing is deleted, triggering automatic suspension after repeated reports.
 
 ## Technologies & Architecture
 - **Frontend Framework:** React Native with Expo (Managed Workflow) for cross-platform compatibility (Android and iOS).
