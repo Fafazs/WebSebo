@@ -1,31 +1,80 @@
+// File: src/screens/auth/OnboardingScreen.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import { styles } from './styles/OnboardingStyles';
 
 export default function OnboardingScreen({ navigation }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.badge}>TELA 1 • RF01</Text>
-      <Text style={styles.title}>Livros perto. Histórias sem fim.</Text>
-      <Text style={styles.desc}>Encontre sebos e livros na sua região com segurança.</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
       
-      <TouchableOpacity style={styles.btn} onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.btnText}>Começar Agora →</Text>
-      </TouchableOpacity>
+      <View>
+        {/* Header - Logo e Subtítulo */}
+        <View style={styles.headerContainer}>
+          <View style={styles.logoPlaceholder}>
+            {/* Simulação do ícone de livro do design */}
+            <View style={styles.logoIconInner} />
+          </View>
+          <View>
+            <Text style={styles.logoText}>sebo perto</Text>
+            <Text style={styles.logoSubText}>LIVROS QUE CIRCULAM</Text>
+          </View>
+        </View>
 
-      <TouchableOpacity style={styles.devBtn} onPress={() => navigation.navigate('DevTest')}>
-        <Text style={styles.devText}>⚙️ Abrir Painel de Testes do Firebase</Text>
-      </TouchableOpacity>
-    </View>
+        {/* Localização (Badge / Pill) */}
+        <View style={styles.locationContainer}>
+          <Text style={styles.locationPin}>📍</Text>
+          <Text style={styles.locationText}>Fortaleza, CE</Text>
+        </View>
+
+        {/* Título Principal */}
+        <View style={styles.mainTitleContainer}>
+          <Text style={styles.mainTitle}>Livros perto.</Text>
+          <Text style={styles.mainTitle}>
+            Histórias <Text style={styles.highlightText}>sem</Text>
+          </Text>
+          <Text style={[styles.mainTitle, styles.highlightText]}>fim.</Text>
+        </View>
+
+        {/* Descrição */}
+        <Text style={styles.description}>
+          Encontre sebos e livros na sua{'\n'}região com segurança.
+        </Text>
+      </View>
+
+      {/* Card Inferior (Sebos Verificados) */}
+      <View>
+        <View style={styles.bottomCard}>
+          
+          <View style={styles.cardHeader}>
+            <View style={styles.cardIconPlaceholder}>
+               <Text style={styles.cardIconText}>🛡️</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.cardTitle}>Sebos verificados</Text>
+              <Text style={styles.cardSubtitle}>Negocie direto e com tranquilidade</Text>
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.cardButton} 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.cardButtonText}>Começar agora</Text>
+            <Text style={styles.arrowIcon}>→</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.cardFooterText}>Leva menos de um minuto</Text>
+          
+        </View>
+
+        {/* Acesso oculto de dev para o Painel Firebase */}
+        <TouchableOpacity style={styles.devBtn} onPress={() => navigation.navigate('DevTest')}>
+          <Text style={styles.devText}>Painel Firebase</Text>
+        </TouchableOpacity>
+      </View>
+      
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0D0D0D', padding: 24, justifyContent: 'center' },
-  badge: { color: '#888', fontSize: 11, fontWeight: 'bold', marginBottom: 8 },
-  title: { color: '#FFF', fontSize: 32, fontWeight: 'bold', marginBottom: 12 },
-  desc: { color: '#AAA', fontSize: 16, marginBottom: 32 },
-  btn: { backgroundColor: '#FFF', height: 48, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  btnText: { color: '#111', fontWeight: 'bold', fontSize: 16 },
-  devBtn: { marginTop: 20, padding: 10, alignItems: 'center' },
-  devText: { color: '#888', fontSize: 12 }
-});

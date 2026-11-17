@@ -26,6 +26,7 @@ const Tab = createBottomTabNavigator();
 function MainTabs() {
   return (
     <Tab.Navigator
+    tabBar={() => null}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#111111',

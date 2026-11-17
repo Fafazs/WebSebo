@@ -12,11 +12,33 @@ import {
   where,
   writeBatch,
   serverTimestamp,
+  increment
 } from 'firebase/firestore';
 import { Linking } from 'react-native';
 import { auth, db } from '../config/firebaseConfig';
 
 const MAX_REPORTS_BEFORE_SUSPENSION = 3; // RF14 threshold
+
+// NOVA FUNÇÃO: Finalizar negociação e dar Like no vendedor
+export async function finalizeNegotiationAndLike(historyId, sellerId, giveLike) {
+  // 1. Atualiza o status no documento do histórico
+  const historyRef = doc(db, 'negotiation_history', historyId);
+  await updateDoc(historyRef, {
+    status: 'finalizado',
+    liked: giveLike,
+    finalizedAt: serverTimestamp()
+  });
+
+  // 2. Se o usuário curtiu, incrementa o contador no perfil do vendedor
+  if (giveLike) {
+    const sellerRef = doc(db, 'users', sellerId);
+    await updateDoc(sellerRef, {
+      likesCount: increment(1) // Adiciona +1 de forma atômica e segura
+    });
+  }
+  
+  return true;
+}
 
 // RF11 & RNF03: Save immutable snapshot and redirect to WhatsApp
 export async function startWhatsAppNegotiation(book, openWhatsAppApp = true) {
@@ -50,10 +72,17 @@ export async function startWhatsAppNegotiation(book, openWhatsAppApp = true) {
 
   // RF11: Open WhatsApp with pre-filled message
   if (openWhatsAppApp && book.sellerWhatsapp) {
+    
+    let phone = book.sellerWhatsapp;
+    if (!phone.startsWith('55')) {
+      phone = '55' + phone;
+    }
+
     const message = encodeURIComponent(
-      `Olá ${book.sellerName}! Vi seu anúncio do livro "${book.title}" (R$ ${book.price}) no app Sebo Online e tenho interesse.`
+      `Olá ${book.sellerName}! Vi seu anúncio do livro "${book.title}" (R$ ${book.price}) no app Sebo Perto e tenho interesse.`
     );
-    const whatsappUrl = `https://wa.me/${book.sellerWhatsapp}?text=${message}`;
+    
+    const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
     const canOpen = await Linking.canOpenURL(whatsappUrl);
     if (canOpen) {
       await Linking.openURL(whatsappUrl);
