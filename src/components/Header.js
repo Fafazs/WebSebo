@@ -1,6 +1,7 @@
 // File: src/components/Header.js
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 
 export default function Header({ userName, onPressAvatar, isFixed = false }) {
@@ -15,7 +16,7 @@ export default function Header({ userName, onPressAvatar, isFixed = false }) {
 
   return (
     // Se isFixed for true, aplica a classe styles.fixedHeader
-    <SafeAreaView style={[styles.safeArea, isFixed && styles.fixedHeader]}>
+    <SafeAreaView edges={['top']} style={[styles.safeArea, isFixed && styles.fixedHeader]}>
       <View style={styles.headerContainer}>
         <View style={styles.logoGroup}>
           <View style={styles.logoIcon}>
@@ -38,15 +39,11 @@ export default function Header({ userName, onPressAvatar, isFixed = false }) {
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: 'transparent', // Fundo padrão caso não seja fixo
+    backgroundColor: '#FFFFFF',
     zIndex: 100,
   },
   fixedHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)', // O efeito translúcido
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.05)',
   },
@@ -55,7 +52,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
   logoGroup: { flexDirection: 'row', alignItems: 'center' },
   logoIcon: {

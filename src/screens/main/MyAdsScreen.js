@@ -1,5 +1,7 @@
 // File: src/screens/main/MyAdsScreen.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { useFocusEffect } from '@react-navigation/native';
 import { 
   View, Text, TouchableOpacity, ScrollView, TextInput,
   ActivityIndicator, Alert, RefreshControl, Modal 
@@ -7,11 +9,13 @@ import {
 import { styles } from './styles/MyAdsStyles';
 import { theme } from '../../theme';// Importando o theme para o botãozinho da IA
 
+import BookCover from '../../components/BookCover';
+import KeyboardScreen from '../../components/KeyboardScreen';
 import Header from '../../components/Header';
 import BottomNavbar from '../../components/BottomNavbar';
 
 import { getUserProfile } from '../../services/authService';
-import { getMyBookAds, deleteBookAd, updateBookAd } from '../../services/bookService'; 
+import { getMyBookAds, deleteBookAd, updateBookAd, uploadBookCover } from '../../services/bookService';
 // Importando o serviço da IA para usar no modal de edição
 import { generateSynopsisWithGemini } from '../../services/geminiService';
 
@@ -30,15 +34,12 @@ export default function MyAdsScreen({ navigation }) {
   const [showEditModal, setShowEditModal] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [loadingAIEdit, setLoadingAIEdit] = useState(false); // Carregamento da IA na edição
+  const [editCoverUri, setEditCoverUri] = useState('');
   const [editForm, setEditForm] = useState({
     id: '', title: '', author: '', price: '', condition: '', synopsis: ''
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  async function loadData() {
     try {
       setLoading(true);
       const profile = await getUserProfile();
@@ -54,7 +55,11 @@ export default function MyAdsScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useFocusEffect(React.useCallback(() => {
+    loadData();
+  }, []));
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -86,6 +91,7 @@ export default function MyAdsScreen({ navigation }) {
 
   // --- LÓGICA DE EDIÇÃO ---
   const openEditModal = (book) => {
+    setEditCoverUri('');
     setEditForm({
       id: book.id,
       title: book.title || '',
@@ -102,6 +108,7 @@ export default function MyAdsScreen({ navigation }) {
       setSavingEdit(true);
       
       const numericPrice = parseFloat(editForm.price.replace(',', '.'));
+      if (!editForm.title.trim() || !editForm.author.trim() || !Number.isFinite(numericPrice) || numericPrice <= 0) throw new Error('Informe título, autor e preço válido.');
       
       const patchData = {
         title: editForm.title,
@@ -110,6 +117,7 @@ export default function MyAdsScreen({ navigation }) {
         condition: editForm.condition,
         synopsis: editForm.synopsis
       };
+      if (editCoverUri) { patchData.coverUrl = await uploadBookCover(editCoverUri); patchData.coverIllustrative = false; }
 
       await updateBookAd(editForm.id, patchData);
 
@@ -120,7 +128,7 @@ export default function MyAdsScreen({ navigation }) {
       setShowEditModal(false);
     } catch (error) {
       console.error("Erro ao editar:", error);
-      Alert.alert("Erro", "Não foi possível salvar as alterações.");
+      Alert.alert("Erro", error.message || "Não foi possível salvar as alterações.");
     } finally {
       setSavingEdit(false);
     }
@@ -136,13 +144,14 @@ export default function MyAdsScreen({ navigation }) {
     try {
       setLoadingAIEdit(true);
       const generatedData = await generateSynopsisWithGemini(editForm.title, editForm.author);
+      if (generatedData.cached) Alert.alert('Sinopse recuperada', 'Esta sugestão foi recuperada do cache local.');
       
       // Atualiza apenas a sinopse no formulário (ignora categorias para esse patch rápido)
       setEditForm(prev => ({ ...prev, synopsis: generatedData.synopsis }));
       
     } catch (error) {
       console.error(error);
-      Alert.alert('Erro na IA', 'Não foi possível gerar a sinopse agora.');
+      Alert.alert('Erro na IA', error.message || 'Não foi possível gerar a sinopse agora.');
     } finally {
       setLoadingAIEdit(false);
     }
@@ -236,14 +245,8 @@ export default function MyAdsScreen({ navigation }) {
               myAds.map((ad) => (
                 <View key={ad.id} style={styles.adCard}>
                   <View style={styles.adCardTop}>
-                    <View style={styles.adCoverPlaceholder}>
-                      <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                        <View style={styles.adCoverTopLine} />
-                        <View style={styles.adCoverDot} />
-                      </View>
-                      <Text style={styles.adCoverInitials}>{getBookInitials(ad.title)}</Text>
-                    </View>
-                    
+                    <BookCover uri={ad.coverUrl} title={ad.title} style={styles.adCoverPlaceholder} />
+
                     <View style={styles.adInfo}>
                       <Text style={styles.adTitle}>{ad.title}</Text>
                       <Text style={styles.adDetails}>
@@ -304,6 +307,7 @@ export default function MyAdsScreen({ navigation }) {
 
       {/* MODAL DE EDIÇÃO (Patch) */}
       <Modal animationType="slide" transparent={true} visible={showEditModal}>
+        <KeyboardScreen>
         <View style={styles.modalOverlay}>
           <View style={styles.editModalContent}>
             
@@ -313,7 +317,16 @@ export default function MyAdsScreen({ navigation }) {
             
             <Text style={styles.modalTitle}>Editar Anúncio</Text>
             
-            <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%', marginTop: 10 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ width: '100%', marginTop: 10 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+              <TouchableOpacity onPress={async () => {
+                try {
+                  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+                  if (!result.canceled) setEditCoverUri(result.assets[0].uri);
+                } catch { Alert.alert('Erro', 'Não foi possível selecionar a foto.'); }
+              }} style={{ minHeight: 48, justifyContent: 'center' }}>
+                <Text>Selecionar nova foto</Text>
+                {editCoverUri ? <BookCover uri={editCoverUri} title={editForm.title} style={{ width: 80, height: 110 }} /> : null}
+              </TouchableOpacity>
               
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>TÍTULO</Text>
@@ -389,6 +402,7 @@ export default function MyAdsScreen({ navigation }) {
             </ScrollView>
           </View>
         </View>
+        </KeyboardScreen>
       </Modal>
 
     </View>

@@ -1,11 +1,11 @@
 // File: src/theme/index.js
 export const theme = {
   colors: {
-    backgroundDark: '#000000', // Splash[cite: 3]
+    backgroundDark: '#111111', // Splash[cite: 3]
     backgroundLight: '#F5F5F5', // Telas internas[cite: 4, 5, 6]
     surface: '#444444',        // Card inferior Splash[cite: 3]
     surfaceLight: '#FFFFFF',   // Inputs[cite: 4, 5] e Cards[cite: 6]
-    primary: '#D0FF50',        // Verde limão[cite: 3]
+    primary: '#C6FF45',        // Verde limão[cite: 3]
     textPrimaryDark: '#FFFFFF',
     textSecondaryDark: '#CCCCCC',
     textPrimaryLight: '#111111',

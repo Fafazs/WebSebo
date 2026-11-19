@@ -6,6 +6,7 @@ import { startWhatsAppNegotiation } from '../../services/historyService';
 import { getUserProfile } from '../../services/authService'; // <-- Importado para o Header
 import { theme } from '../../theme'; 
 
+import BookCover from '../../components/BookCover';
 import Header from '../../components/Header'; // <-- Importando o Header padrão
 import { styles } from './styles/BookDetailsStyles';
 
@@ -13,20 +14,7 @@ export default function BookDetailsScreen({ navigation, route }) {
   const [book, setBook] = useState(null);
   const [userData, setUserData] = useState(null); // <-- Estado para o usuário
   const [loading, setLoading] = useState(true);
-
-  const bookMock = {
-    id: 'mock-1',
-    title: 'Torto Arado',
-    author: 'Itamar Vieira Junior',
-    price: 32,
-    condition: 'Muito bom',
-    format: 'Capa comum',
-    synopsis: 'Nas profundezas do sertão baiano, duas irmãs descobrem no vínculo com a terra e com sua ancestralidade a força necessária para enfrentar injustiças. Uma narrativa sobre resistência, afeto e as vozes que o Brasil tentou silenciar.',
-    sellerName: 'Sebo Girassol',
-    sellerVerified: true,
-    location: { city: 'Fortaleza', neighborhood: 'Benfica' },
-    sellerWhatsapp: '5585999999999'
-  };
+  const [openingWhatsApp, setOpeningWhatsApp] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,7 +26,8 @@ export default function BookDetailsScreen({ navigation, route }) {
         // Busca os detalhes do livro
         const bookId = route.params?.bookId;
         if (!bookId) {
-          setBook(bookMock);
+          Alert.alert('Livro indisponível', 'O anúncio não foi informado.');
+          navigation.goBack();
           return;
         }
 
@@ -63,12 +52,15 @@ export default function BookDetailsScreen({ navigation, route }) {
   }, [route.params?.bookId]);
 
   const handleWhatsApp = async () => {
-    if (!book) return;
+    if (!book || openingWhatsApp) return;
+    setOpeningWhatsApp(true);
     try {
       await startWhatsAppNegotiation(book, true);
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível iniciar a negociação no momento. Tente novamente.');
+      Alert.alert('Erro', error.message || 'Não foi possível iniciar a negociação.');
       console.error(error);
+    } finally {
+      setOpeningWhatsApp(false);
     }
   };
 
@@ -105,7 +97,7 @@ export default function BookDetailsScreen({ navigation, route }) {
       />
 
       {/* Ajustei o padding top do ScrollView para não ficar embaixo do Header fixo */}
-      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 100 }]} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Botão Voltar */}
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -114,13 +106,8 @@ export default function BookDetailsScreen({ navigation, route }) {
 
         {/* Capa do Livro */}
         <View style={styles.imageContainer}>
-          <View style={styles.coverPlaceholder}>
-            <View style={styles.coverTopRightDot} />
-            <View style={styles.coverBottomInfo}>
-              <Text style={styles.coverInitials}>{getInitials(book.title)}</Text>
-              <Text style={styles.coverAuthor}>{book.author}</Text>
-            </View>
-          </View>
+          <BookCover uri={book.coverUrl} title={book.title} style={styles.coverPlaceholder} />
+          {book.coverIllustrative ? <Text style={{ color: '#666', marginTop: 8 }}>Capa ilustrativa</Text> : null}
         </View>
 
         {/* Título e Coração */}
@@ -170,13 +157,13 @@ export default function BookDetailsScreen({ navigation, route }) {
             <Text style={styles.sellerName} numberOfLines={1}>{book.sellerName}</Text>
             
             <View style={styles.sellerDetailsRow}>
-              {book.sellerVerified && (
+              {false && book.sellerVerified && (
                 <View style={styles.verifiedBadge}>
                   <Text style={styles.verifiedText}>✓ Verificado</Text>
                 </View>
               )}
               <Text style={styles.sellerLocation}>
-                {book.location?.neighborhood || 'Bairro'} · {(Math.random() * 5 + 1).toFixed(1)} km de você
+                {book.location?.neighborhood || 'Bairro não informado'} · {book.location?.city || 'Cidade não informada'}
               </Text>
             </View>
             
@@ -189,6 +176,7 @@ export default function BookDetailsScreen({ navigation, route }) {
           style={styles.whatsappBtn} 
           activeOpacity={0.8}
           onPress={handleWhatsApp}
+          disabled={openingWhatsApp}
         >
           <Text style={styles.whatsappIcon}>💬</Text>
           <Text style={styles.whatsappText}>Chamar no WhatsApp</Text>

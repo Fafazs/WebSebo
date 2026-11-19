@@ -1,38 +1,15 @@
-# WebSebo
+# Sebo Perto (WebSebo)
 
-## Description
-WebSebo is a mobile application developed in React Native (Expo) that connects informal used book sellers (independent "sebeiros") with passionate readers. It acts as a specialized digital catalog to give organic visibility to local small-scale sellers. To preserve the traditional and friendly neighbourhood book culture, all business negotiations are completed directly via WhatsApp, while the platform ensures a secure environment through an immutable interaction history and an anti-fraud reporting mechanism.
+An Expo / React Native student project for browsing used-book listings and contacting independent sellers. It uses JavaScript, React Navigation, Firebase Authentication, Firestore and Firebase Storage.
 
-## Features
-- **User Authentication:** Universal registration, secure login, and password recovery managed via Firebase Authentication.
-- **Verified Seller Accounts (KYC):** Users can upgrade to "Seller" status by providing their CPF and accepting legal responsibility terms.
-- **Store & Inventory Management (CRUD):** Sellers can fully create, read, update, and delete book listings and store profiles.
-- **AI-Powered Synopsis:** Integration with Google AI Studio (Gemini API) to automatically generate book summaries and literary categories from titles and authors.
-- **Smart Feed & Regionalized Search:** Main vitrine displaying available books with search filters by title, author, category, and city/neighborhood location.
-- **WhatsApp Integration & Snapshots:** Direct redirection to the seller's WhatsApp with a simultaneous immutable snapshot saved to the reader's history to ensure evidence retention.
-- **Security & Persistent Reporting:** Interaction history allowing readers to report fraudulent sellers at any time, even if the original book listing is deleted, triggering automatic suspension after repeated reports.
+## Run locally
 
-## Technologies & Architecture
-- **Frontend Framework:** React Native with Expo (Managed Workflow) for cross-platform compatibility (Android and iOS).
-- **Backend & Persistence:** Firebase Auth, Firestore Database, and Firebase Storage.
-- **Artificial Intelligence:** Google AI Studio (Gemini 2.5 Flash API).
+Install dependencies with `npm install`, copy `src/config/env.example.js` to `src/config/env.js`, and configure a Firebase project. Never put a Gemini API key in the client configuration. Start with `npx expo start`, or `npx expo start --web` for the browser. The offline demo is available from the welcome screen; it uses bundled fictitious examples and does not authenticate or perform transactions. Expo Go still needs the development server to load the app initially.
 
+The `preview` profile in `eas.json` configures an Android APK; no build has been created. Configure the EAS `preview` environment with `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID` and `FIREBASE_APP_ID`. The pre-install hook generates the ignored client config from those public Firebase values and fails if any are missing. Do not put the Gemini key in EAS. Review configuration and credentials before running `npx eas-cli@latest build --platform android --profile preview`.
 
-## How to Run
-1. Clone this repository to your local machine:
-   ```bash
-   git clone <REPOSITORY_URL>
-   cd SeboOnline
-   ```
-2. Install all required project dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up your environment variables:
-   - Create an `env.js` file inside `src/config/` (using `src/config/env.example.js` as a template).
-   - Fill in your Firebase web credentials and Google Gemini API key.
-4. Start the application development server using Expo:
-   ```bash
-   npx expo start -c
-   ```
-5. Scan the generated QR code using the **Expo Go** app on your physical mobile device, or press `a` to open it in an Android emulator.
+## Current capabilities and limitations
+
+The application contains authentication and profile screens, a Firestore catalog, seller listing forms, image selection and Storage upload, and WhatsApp links with a Firestore snapshot. These integrations require a configured Firebase project and verified security rules. Storage availability remains unverified; publishing without a photo and selecting an illustrative cover are supported. The separately labeled demo contains 12 sample listings; book data works offline, while Open Library cover images require a network connection. A Node backend provides Gemini generation for local testing only; its key stays in `server/.env`. Valid responses are cached locally and labeled when reused. A local rate limit and Google quota both apply. The shared APK has no AI endpoint until an authenticated HTTPS backend is deployed. Reports, automatic suspension and seller likes are disabled until trusted backend enforcement exists. Seller activation does not verify identity.
+
+Read [project architecture and security](docs/PROJECT_GUIDE.md), [test checklist](docs/TEST_CHECKLIST.md), and [presentation guide](docs/PRESENTATION_GUIDE.md). Firestore is used instead of the Stage 3 Realtime Database requirement; confirm this with the professor.

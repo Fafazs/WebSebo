@@ -73,6 +73,7 @@ export async function getUserProfile() {
 export async function updateUserProfile({ name, email, whatsappPhone }) {
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User not authenticated.');
+  if (email.trim().toLowerCase() !== (currentUser.email || '').toLowerCase()) throw new Error('A alteração de e-mail não está disponível.');
 
   // Prepara os dados básicos
   const updateData = {
@@ -124,10 +125,9 @@ export async function activateSellerKyc({
     role: 'seller',
     location: { city, state, neighborhood, address },
     kyc: {
-      cpf: cpf.replace(/\D/g, ''), // RNF02: Clean digits
       termsAccepted: true,
-      verified: true,
-      verifiedAt: serverTimestamp(),
+      verified: false,
+      activatedAt: serverTimestamp(),
     },
     storeProfile: {
       storeName: storeName || `Sebo de ${currentUser.email.split('@')[0]}`,

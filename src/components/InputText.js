@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { theme } from '../theme';
 
-export default function InputText({ label, placeholder, secureTextEntry, value, onChangeText, keyboardType }) {
+export default function InputText({ label, placeholder, secureTextEntry, value, onChangeText, keyboardType, onFocus }) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
@@ -14,6 +14,7 @@ export default function InputText({ label, placeholder, secureTextEntry, value, 
         secureTextEntry={secureTextEntry}
         value={value}
         onChangeText={onChangeText}
+        onFocus={onFocus}
         keyboardType={keyboardType}
         autoCapitalize="none"
       />

@@ -216,15 +216,23 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   bookCard: {
-    width: COLUMN_WIDTH,
-    marginBottom: theme.spacing.lg,
+    width: '48%',
+    marginBottom: theme.spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 10,
+    shadowColor: '#111111',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
   },
   bookImageContainer: {
-    backgroundColor: '#FFEFA0', // Placeholder amarelado para imitar o mockup
+    width: '100%',
+    backgroundColor: '#E9EDE4',
     borderRadius: theme.borderRadius.md,
-    padding: 12,
-    marginBottom: 12,
-    height: COLUMN_WIDTH * 1.3, 
+    marginBottom: 10,
+    aspectRatio: 0.78,
   },
   bookCoverPlaceholder: {
     flex: 1,
@@ -246,8 +254,6 @@ export const styles = StyleSheet.create({
       alignSelf: 'flex-end'
   },
   bookInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 4,
   },
@@ -256,7 +262,7 @@ export const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.textPrimaryLight,
     flex: 1,
-    marginRight: 8,
+    marginBottom: 4,
   },
   bookPrice: {
     fontSize: 15,

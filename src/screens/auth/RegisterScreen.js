@@ -5,6 +5,7 @@ import {
   ScrollView, TextInput, StyleSheet 
 } from 'react-native';
 import InputText from '../../components/InputText';
+import KeyboardScreen from '../../components/KeyboardScreen';
 import { registerUser } from '../../services/authService';
 import { styles } from './styles/RegisterStyles';
 import { theme } from '../../theme';
@@ -69,7 +70,8 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <KeyboardScreen>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
       
       {/* Botão Voltar */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -192,6 +194,7 @@ export default function RegisterScreen({ navigation }) {
       </TouchableOpacity>
 
     </ScrollView>
+    </KeyboardScreen>
   );
 }
 

@@ -2,13 +2,18 @@
 import React, { useState } from 'react';
 import { 
   View, Text, TextInput, TouchableOpacity, ScrollView, 
-  SafeAreaView, Alert, ActivityIndicator 
+  Alert, ActivityIndicator
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import BookCover from '../../components/BookCover';
+import KeyboardScreen from '../../components/KeyboardScreen';
+import Header from '../../components/Header';
 import { styles } from './styles/AddBookStyles';
 
 // Importar serviços
-import { createBookAd } from '../../services/bookService';
+import { createBookAd, uploadBookCover } from '../../services/bookService';
 import { generateSynopsisWithGemini } from '../../services/geminiService';
+import { findIllustrativeCover } from '../../services/googleBooksService';
 
 // Todas as categorias disponíveis no sistema
 const AVAILABLE_CATEGORIES = [
@@ -23,7 +28,9 @@ export default function AddBookScreen({ navigation }) {
   const [condition, setCondition] = useState('');
   const [synopsis, setSynopsis] = useState('');
   const [selectedCategories, setSelectedCategories] = useState([]);
-  const [coverColor, setCoverColor] = useState('4A4A4A'); // Cor base simulando upload
+  const [coverUri, setCoverUri] = useState('');
+  const [coverIsIllustrative, setCoverIsIllustrative] = useState(false);
+  const [loadingCover, setLoadingCover] = useState(false);
   
   const [loadingAI, setLoadingAI] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -41,11 +48,21 @@ export default function AddBookScreen({ navigation }) {
     }
   };
 
-  // Simula a escolha de uma foto alterando a cor de fundo da capa baseada no tempo
-  const handleSimulatePhotoUpload = () => {
-    const randomColor = Math.floor(Math.random()*16777215).toString(16);
-    setCoverColor(randomColor);
-    Alert.alert('Foto anexada', 'Uma capa temporária foi gerada com sucesso.');
+  const pickCover = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+      if (!result.canceled) { setCoverUri(result.assets[0].uri); setCoverIsIllustrative(false); }
+    } catch { Alert.alert('Erro', 'Não foi possível selecionar a foto. Verifique as permissões.'); }
+  };
+
+  const handleIllustrativeCover = async () => {
+    try {
+      setLoadingCover(true);
+      const url = await findIllustrativeCover(title, author);
+      setCoverUri(url);
+      setCoverIsIllustrative(true);
+    } catch (error) { Alert.alert('Capa ilustrativa', error.message); }
+    finally { setLoadingCover(false); }
   };
 
   const handleGenerateAI = async () => {
@@ -58,6 +75,7 @@ export default function AddBookScreen({ navigation }) {
       setLoadingAI(true);
       // Chama o teu serviço Gemini
       const generatedData = await generateSynopsisWithGemini(title, author);
+      if (generatedData.cached) Alert.alert('Sinopse recuperada', 'Esta sugestão foi recuperada do cache local.');
       
       setSynopsis(generatedData.synopsis);
       
@@ -74,7 +92,7 @@ export default function AddBookScreen({ navigation }) {
       
     } catch (error) {
       console.error(error);
-      Alert.alert('Erro na IA', 'Não foi possível gerar a sinopse agora. Você pode preencher manualmente.');
+      Alert.alert('Erro na IA', error.message || 'Você pode preencher a sinopse manualmente.');
     } finally {
       setLoadingAI(false);
     }
@@ -94,21 +112,25 @@ export default function AddBookScreen({ navigation }) {
     try {
       setLoadingSubmit(true);
       
-      // Gera URL de placeholder com a cor simulada
-      const coverUrl = `https://via.placeholder.com/300x450/${coverColor}/FFFFFF.png?text=${title.replace(/ /g, '+')}`;
-      
       // Formata o preço convertendo de string com vírgula para número (ex: "32,50" -> 32.50)
       const numericPrice = parseFloat(price.replace(',', '.'));
+      if (!title.trim() || !author.trim() || !Number.isFinite(numericPrice) || numericPrice <= 0) {
+        Alert.alert('Atenção', 'Informe título, autor e preço válido maior que zero.');
+        return;
+      }
+
+      const coverUrl = coverUri ? (coverIsIllustrative ? coverUri : await uploadBookCover(coverUri)) : '';
 
       // Chama o serviço para criar no Firebase
       await createBookAd({ 
         title, 
         author, 
-        price: isNaN(numericPrice) ? 0 : numericPrice, 
+        price: numericPrice,
         condition, 
         synopsis,
         categories: selectedCategories,
-        coverUrl
+        coverUrl,
+        coverIllustrative: coverIsIllustrative
       });
       
       Alert.alert('Sucesso!', 'Livro publicado com sucesso na sua vitrine.');
@@ -123,22 +145,12 @@ export default function AddBookScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <KeyboardScreen>
       
-      {/* Top Header */}
-      <View style={styles.topHeaderBackground}>
-        <View style={styles.logoGroup}>
-          <View style={styles.logoIcon} />
-          <View>
-            <Text style={styles.logoTitle}>sebo perto</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.avatarSmall}>
-          <Text style={styles.avatarSmallText}>AM</Text>
-        </TouchableOpacity>
-      </View>
+      <Header onPressAvatar={() => navigation.navigate('MainTabs', { screen: 'ProfileTab' })} />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>Voltar aos anúncios</Text>
@@ -148,22 +160,17 @@ export default function AddBookScreen({ navigation }) {
         <Text style={styles.pageTitle}>Cadastrar livro</Text>
         <Text style={styles.pageDescription}>Capriche nos detalhes para ajudar o leitor a decidir.</Text>
 
-        {/* --- ÁREA DE FOTO (Mock Simulado)[cite: 13] --- */}
         <View style={styles.photoCard}>
           <Text style={styles.photoTitle}>Foto do livro</Text>
-          <TouchableOpacity 
-            style={[styles.photoUploadBox, coverColor !== '4A4A4A' && { backgroundColor: `#${coverColor}20`, borderColor: `#${coverColor}` }]} 
-            activeOpacity={0.7}
-            onPress={handleSimulatePhotoUpload}
-          >
-            <View style={styles.photoUploadIcon}>
-              <Text style={{ fontSize: 18 }}>📷</Text>
-            </View>
-            <Text style={styles.photoUploadText}>
-              {coverColor !== '4A4A4A' ? 'Foto adicionada!' : 'Clique para adicionar uma foto'}
-            </Text>
-            <Text style={styles.photoUploadSub}>Simulação: Altera a cor da capa</Text>
+          <TouchableOpacity style={styles.photoUploadBox} onPress={pickCover}>
+            {coverUri ? <BookCover uri={coverUri} title={title} style={{ width: 100, height: 140 }} /> : <Text style={styles.photoUploadText}>Selecionar foto da galeria</Text>}
+            <Text style={styles.photoUploadSub}>Toque para selecionar ou alterar</Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={handleIllustrativeCover} disabled={loadingCover} style={{ minHeight: 48, justifyContent: 'center', alignItems: 'center' }}>
+            <Text>{loadingCover ? 'Buscando capa...' : 'Buscar capa ilustrativa'}</Text>
+          </TouchableOpacity>
+          {coverIsIllustrative ? <Text style={{ color: '#666', textAlign: 'center' }}>Capa ilustrativa; a edição pode ser diferente da foto real.</Text> : null}
+          {coverUri ? <TouchableOpacity onPress={() => { setCoverUri(''); setCoverIsIllustrative(false); }} style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center' }}><Text>Remover capa e publicar sem foto</Text></TouchableOpacity> : null}
         </View>
 
         {/* --- FORMULÁRIO DE DETALHES[cite: 14] --- */}
@@ -174,7 +181,7 @@ export default function AddBookScreen({ navigation }) {
             <Text style={styles.standardLabel}>TÍTULO</Text>
             <TextInput 
               style={styles.input} placeholder="Ex.: Torto Arado" placeholderTextColor="#999"
-              value={title} onChangeText={setTitle}
+              value={title} onChangeText={value => { setTitle(value); if (coverIsIllustrative) { setCoverUri(''); setCoverIsIllustrative(false); } }}
             />
           </View>
 
@@ -182,7 +189,7 @@ export default function AddBookScreen({ navigation }) {
             <Text style={styles.standardLabel}>AUTOR(A)</Text>
             <TextInput 
               style={styles.input} placeholder="Nome do autor" placeholderTextColor="#999"
-              value={author} onChangeText={setAuthor}
+              value={author} onChangeText={value => { setAuthor(value); if (coverIsIllustrative) { setCoverUri(''); setCoverIsIllustrative(false); } }}
             />
           </View>
 
@@ -250,6 +257,7 @@ export default function AddBookScreen({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
-    </SafeAreaView>
+      </KeyboardScreen>
+    </View>
   );
 }

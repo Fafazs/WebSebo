@@ -4,10 +4,11 @@ import { theme } from '../../../theme';
 
 export const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: theme.colors.backgroundLight,
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: 60,
+    paddingTop: 24,
+    paddingBottom: 40,
   },
   
   // --- TOP BAR ---
@@ -31,6 +32,7 @@ export const styles = StyleSheet.create({
   logoIcon: {
     width: 44,
     height: 44,
+    backgroundColor: theme.colors.primary,
     borderWidth: 1,
     borderColor: theme.colors.textPrimaryLight,
     borderRadius: theme.borderRadius.sm,

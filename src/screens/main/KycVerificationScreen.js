@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import KeyboardScreen from '../../components/KeyboardScreen';
 import { 
   View, Text, TouchableOpacity, ScrollView, TextInput, 
   ActivityIndicator, Alert, SafeAreaView, StyleSheet
@@ -56,7 +57,7 @@ export default function KycVerificationScreen({ navigation }) {
   }, []);
 
   // Máscara para o WhatsApp: (85) 99999-9999 (Exatamente igual ao registro)
-  const handleWhatsappChange = (text) => {
+  function handleWhatsappChange(text) {
     let value = text.replace(/\D/g, '');
     if (value.length > 11) value = value.substring(0, 11);
 
@@ -68,7 +69,7 @@ export default function KycVerificationScreen({ navigation }) {
       value = value.replace(/(\d{2})/, "($1) ");
     }
     setWhatsappPhone(value);
-  };
+  }
 
   // Máscara simples para CPF
   const handleCpfChange = (text) => {
@@ -136,12 +137,13 @@ export default function KycVerificationScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      <KeyboardScreen>
       
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Text style={styles.backText}>Voltar ao perfil</Text>
       </TouchableOpacity>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         
         <View style={styles.cardContainer}>
           
@@ -260,7 +262,7 @@ export default function KycVerificationScreen({ navigation }) {
               <ActivityIndicator color="#000000" />
             ) : (
               <>
-                <Text style={styles.submitBtnText}>Enviar para validação</Text>
+                <Text style={styles.submitBtnText}>Ativar conta de vendedor</Text>
                 <Text style={styles.arrowIcon}>→</Text>
               </>
             )}
@@ -269,6 +271,7 @@ export default function KycVerificationScreen({ navigation }) {
         </View>
 
       </ScrollView>
+      </KeyboardScreen>
     </SafeAreaView>
   );
 }

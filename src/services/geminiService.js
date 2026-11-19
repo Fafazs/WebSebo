@@ -1,96 +1,38 @@
-// File: src/services/geminiService.js
-// Requirement: RF09 (Google AI Studio / Gemini API - Auto Synopsis & Categories)
+// Gemini credentials must stay on a trusted server.
 import { ENV } from '../config/env';
 
-const COMPATIBLE_MODELS = [
-  'gemini-4-hydrogen',
-  'gemini-3.1-flash-lite',
-  // 'gemini-4-argon', // Descomente se usar chave com faturamento (tier pago)
-];
-
-const RETRYABLE_STATUSES = new Set([429, 500, 503, 504]);
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export async function generateSynopsisWithGemini(bookTitle, bookAuthor) {
-  const apiKey = ENV.GEMINI_API_KEY?.trim();
-
-  if (!apiKey) {
-    throw new Error("Chave da API Gemini não encontrada no config/env.js.");
+  const title = bookTitle?.trim();
+  const author = bookAuthor?.trim();
+  if (!title || !author) throw new Error('Informe o título e o autor.');
+  const endpoint = ENV.GEMINI_PROXY_URL?.trim();
+  const localHttp = /^http:\/\/(?:localhost|127\.0\.0\.1|10(?:\.\d{1,3}){3}|192\.168(?:\.\d{1,3}){2}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2})(?::\d+)?\/synopsis$/.test(endpoint || '');
+  if (!endpoint || !(endpoint.startsWith('https://') || (__DEV__ && localHttp))) {
+    throw new Error('IA indisponível: servidor seguro não configurado. Preencha a sinopse manualmente.');
   }
-
-  const prompt = `Gere uma sinopse curta em português (máximo 300 caracteres, sem spoilers) e até 4 categorias literárias curtas para o livro "${bookTitle}" do autor "${bookAuthor}". Responda ESTRITAMENTE em JSON válido no formato exato: {"synopsis": "...", "categories": ["...", "..."]}.`;
-
-  let lastError = null;
-
-  for (let i = 0; i < COMPATIBLE_MODELS.length; i++) {
-    const model = COMPATIBLE_MODELS[i];
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-    try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-          },
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const message = data.error?.message || 'Falha na requisição';
-        const isHighDemand =
-          RETRYABLE_STATUSES.has(response.status) ||
-          /high demand|overloaded|unavailable/i.test(message);
-
-        const err = new Error(`[${model} | Erro ${response.status}] ${message}`);
-
-        // Se for erro de chave/permissão (400/403), não adianta trocar de modelo
-        if (!isHighDemand) {
-          throw err;
-        }
-
-        console.warn(`⚠️ ${model} indisponível/alta demanda. Tentando próximo modelo...`, message);
-        lastError = err;
-
-        // Pequena pausa antes de tentar o próximo modelo
-        if (i < COMPATIBLE_MODELS.length - 1) {
-          await sleep(600);
-        }
-        continue;
-      }
-
-      let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (!rawText) {
-        throw new Error(`[${model}] A API não retornou o texto esperado no objeto JSON.`);
-      }
-
-      rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      return JSON.parse(rawText);
-    } catch (error) {
-      lastError = error;
-
-      // Se o erro não for de rede/demanda, repassa imediatamente
-      const isNetworkOrDemand =
-        error.name === 'TypeError' ||
-        /429|500|503|504|high demand|overloaded|unavailable/i.test(error.message);
-
-      if (!isNetworkOrDemand || i === COMPATIBLE_MODELS.length - 1) {
-        console.error("🔥 ERRO DISPARADO NO GEMINI SERVICE:", error);
-        throw error;
-      }
-
-      await sleep(600);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, author }), signal: controller.signal,
+    });
+    if (response.status === 401 || response.status === 403) throw new Error('Autenticação da IA recusada.');
+    if (response.status === 429) {
+      const details = await response.json().catch(() => ({}));
+      throw new Error(details.source === 'local' ? 'Limite local: aguarde um minuto para gerar outra sinopse.' : 'Limite da API Google atingido. Tente mais tarde.');
     }
+    if (!response.ok) throw new Error('Serviço de IA indisponível. Tente mais tarde.');
+    const data = await response.json();
+    if (typeof data.synopsis !== 'string' || !data.synopsis.trim() || !Array.isArray(data.categories) || !data.categories.length || !data.categories.every(item => typeof item === 'string' && item.trim())) {
+      throw new Error('A IA retornou uma resposta inválida.');
+    }
+    return { synopsis: data.synopsis.trim(), categories: data.categories.map(item => item.trim()).slice(0, 4), cached: data.cached === true };
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('A geração demorou demais. Tente novamente.');
+    if (error instanceof TypeError) throw new Error('Sem conexão com o serviço de IA.');
+    throw error;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  throw lastError || new Error("Todos os modelos compatíveis falharam.");
 }

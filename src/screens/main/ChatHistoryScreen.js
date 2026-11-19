@@ -7,11 +7,12 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { styles } from './styles/HistoryStyles';
 import { theme } from '../../theme';
+import BookCover from '../../components/BookCover';
 import Header from '../../components/Header';
 import BottomNavbar from '../../components/BottomNavbar';
 
 import { getUserProfile } from '../../services/authService';
-import { getReaderHistory, reportSellerFromHistory, finalizeNegotiationAndLike } from '../../services/historyService';
+import { getReaderHistory, reportSellerFromHistory, finalizeNegotiationAndLike, openHistoryWhatsApp } from '../../services/historyService';
 
 const COVER_COLORS = ['#4A4641', '#004A7C', '#A83B00', '#2E4C3B', '#5A3D5C'];
 
@@ -27,7 +28,7 @@ export default function ChatHistoryScreen({ navigation }) {
   
   // Estado para o fluxo de finalização
   const [isFinalizing, setIsFinalizing] = useState(false);
-  const [giveLike, setGiveLike] = useState(true);
+  const [giveLike, setGiveLike] = useState(false);
   const [savingAction, setSavingAction] = useState(false);
 
   const loadData = async () => {
@@ -58,29 +59,13 @@ export default function ChatHistoryScreen({ navigation }) {
   const handleOpenChatOptions = (item) => {
     setSelectedChat(item);
     setIsFinalizing(false);
-    setGiveLike(true);
+    setGiveLike(false);
     setShowOptionsModal(true);
   };
 
   const handleCallWhatsApp = async () => {
-    if (!selectedChat?.sellerSnapshot?.sellerWhatsapp) return;
-    
-    // Pega o número do banco
-    let phone = selectedChat.sellerSnapshot.sellerWhatsapp;
-    
-    // Se não começar com 55, a gente empurra o 55 pra dentro dele
-    if (!phone.startsWith('55')) {
-      phone = '55' + phone;
-    }
-
-    const whatsappUrl = `https://wa.me/${phone}`;
-    
-    const canOpen = await Linking.canOpenURL(whatsappUrl);
-    if (canOpen) {
-      await Linking.openURL(whatsappUrl);
-    } else {
-      Alert.alert('Erro', 'Não foi possível abrir o WhatsApp.');
-    }
+    try { await openHistoryWhatsApp(selectedChat.sellerSnapshot, selectedChat.bookSnapshot); }
+    catch (error) { Alert.alert('Erro', error.message); }
   };
 
   const handleFinalizeSave = async () => {
@@ -171,11 +156,7 @@ export default function ChatHistoryScreen({ navigation }) {
                   <TouchableOpacity style={styles.chatItem} activeOpacity={0.7} onPress={() => handleOpenChatOptions(item)}>
                     
                     <View style={styles.itemTopRow}>
-                      <View style={[styles.bookCover, { backgroundColor: coverBg }]}>
-                        <View style={styles.coverTopLine} />
-                        <View style={styles.coverDot} />
-                        <Text style={styles.coverInitials}>{getInitials(bookData.title)}</Text>
-                      </View>
+                      <BookCover uri={bookData.coverUrl} title={bookData.title} style={styles.bookCover} />
 
                       <View style={styles.itemDetails}>
                         <Text style={styles.bookTitle} numberOfLines={1}>{bookData.title || 'Livro'}</Text>
@@ -298,7 +279,7 @@ export default function ChatHistoryScreen({ navigation }) {
             
             <Text style={styles.modalTitle}>Denunciar Vendedor?</Text>
             <Text style={styles.modalDescription}>
-              Tem certeza que deseja denunciar o anúncio/vendedor <Text style={{fontWeight:'bold'}}>"{selectedChat?.sellerSnapshot?.sellerName}"</Text> por suspeita de fraude? Nossa equipe irá analisar a denúncia imediatamente.
+              Denúncias estão indisponíveis no momento.
             </Text>
             
             <TouchableOpacity onPress={handleConfirmReport} style={styles.modalDangerBtn} disabled={savingAction}>

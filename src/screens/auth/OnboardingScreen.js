@@ -66,13 +66,12 @@ export default function OnboardingScreen({ navigation }) {
           </TouchableOpacity>
           
           <Text style={styles.cardFooterText}>Leva menos de um minuto</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Demo')} style={{ minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
+            <Text>Conhecer demonstração offline</Text>
+          </TouchableOpacity>
           
         </View>
 
-        {/* Acesso oculto de dev para o Painel Firebase */}
-        <TouchableOpacity style={styles.devBtn} onPress={() => navigation.navigate('DevTest')}>
-          <Text style={styles.devText}>Painel Firebase</Text>
-        </TouchableOpacity>
       </View>
       
     </SafeAreaView>

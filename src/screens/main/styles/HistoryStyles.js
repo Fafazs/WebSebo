@@ -8,7 +8,7 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: 100, 
+    paddingTop: 24,
     paddingBottom: 100, 
   },
 

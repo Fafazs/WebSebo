@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: 110, // Espaço para o Header fixo
+    paddingTop: 24,
     paddingBottom: 100, // Espaço para a BottomNavbar
   },
 

@@ -6,6 +6,7 @@ import {
 import { styles } from './styles/ProfileStyles';
 
 import Header from '../../components/Header';
+import KeyboardScreen from '../../components/KeyboardScreen';
 import BottomNavbar from '../../components/BottomNavbar';
 import SellerPromoBox from '../../components/profile/SellerPromoBox';
 
@@ -27,32 +28,17 @@ export default function ProfileScreen({ navigation }) {
   const [editForm, setEditForm] = useState({ name: '', email: '', whatsappPhone: '' });
 
   useEffect(() => {
-    loadUserData();
+    let active = true;
+    getUserProfile().then(data => {
+      if (!active) return;
+      if (!data) { Alert.alert('Erro', 'Perfil não encontrado.'); return; }
+      setUserData(data);
+      setEditForm({ name: data.name || '', email: data.email || '', whatsappPhone: data.storeProfile?.whatsappPhone || '' });
+    }).catch(() => {
+      if (active) Alert.alert('Erro', 'Não foi possível carregar os dados.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
-
-  const loadUserData = async () => {
-    try {
-      setLoading(true);
-      const data = await getUserProfile(); 
-      
-      if (data) {
-        setUserData(data);
-        // 1. ADICIONADO O TELEFONE AQUI PARA CARREGAR NO FORMULÁRIO
-        setEditForm({ 
-          name: data.name || '', 
-          email: data.email || '',
-          whatsappPhone: data.storeProfile?.whatsappPhone || ''
-        });
-      } else {
-        Alert.alert("Erro", "Perfil não encontrado.");
-      }
-    } catch (error) {
-      console.error("Erro ao buscar dados do perfil:", error);
-      Alert.alert("Erro", "Não foi possível carregar os dados.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getInitials = (name) => {
     if (!name) return 'ME';
@@ -106,7 +92,7 @@ export default function ProfileScreen({ navigation }) {
       setIsEditing(false);
       Alert.alert("Sucesso", "Perfil atualizado com sucesso.");
     } catch (error) {
-      Alert.alert("Erro", "Falha ao atualizar perfil. Tente novamente.");
+      Alert.alert("Erro", error.message || "Falha ao atualizar perfil. Tente novamente.");
     } finally {
       setSaving(false);
     }
@@ -138,13 +124,15 @@ export default function ProfileScreen({ navigation }) {
     if (tabId === 'Ads') navigation.navigate('MyAdsTab');
   };
 
-  if (loading || !userData) {
+  if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator color="#000000" size="large"/>
       </View>
     );
   }
+
+  if (!userData) return <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}><Text>Não foi possível carregar o perfil.</Text><TouchableOpacity onPress={() => navigation.navigate('HomeTab')} style={{ padding: 16 }}><Text>Voltar à vitrine</Text></TouchableOpacity></View>;
 
   const isSeller = userData.role === 'seller' || userData.kyc?.verified;
   const roleDisplay = isSeller ? 'Vendedor' : 'Leitor';
@@ -158,7 +146,8 @@ export default function ProfileScreen({ navigation }) {
         isFixed={true} 
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardScreen>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         
         <Text style={styles.pageContext}>Minha Conta</Text>
         <Text style={styles.pageTitle}>Perfil</Text>
@@ -296,6 +285,7 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
 
       </ScrollView>
+      </KeyboardScreen>
 
       <BottomNavbar activeTab="Profile" onTabPress={handleTabPress}/>
 

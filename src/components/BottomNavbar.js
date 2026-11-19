@@ -1,8 +1,15 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 
 export default function BottomNavbar({ activeTab, onTabPress }) {
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardVisible(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardVisible(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   // Configuração das Tabs usando as imagens locais
   const tabs = [
     { 
@@ -28,8 +35,9 @@ export default function BottomNavbar({ activeTab, onTabPress }) {
     },
   ];
 
+  if (keyboardVisible) return null;
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <View style={styles.navContainer}>
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -65,7 +73,7 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
+    borderTopColor: '#E8E8E8',
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -76,12 +84,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
+    minHeight: 48,
   },
   // Estilos para o ícone PNG
   iconImage: {
@@ -96,7 +106,7 @@ const styles = StyleSheet.create({
     tintColor: theme.colors.textPrimaryLight, // Aplica a cor do tema à imagem ativa
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     color: '#999999',
   },

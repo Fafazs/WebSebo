@@ -1,5 +1,6 @@
 // File: src/screens/main/HomeScreen.js
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 
 // Serviços reais
@@ -8,6 +9,7 @@ import { getUserProfile } from '../../services/authService'; // <-- Importado pa
 
 import { styles } from './styles/HomeStyles';
 
+import BookCover from '../../components/BookCover';
 import Header from '../../components/Header';
 import HeroSearch from '../../components/home/HeroSearch';
 import CategoryBar from '../../components/home/CategoryBar';
@@ -22,7 +24,7 @@ export default function HomeScreen({ navigation }) {
   const [showAll, setShowAll] = useState(false);
   const INITIAL_LIMIT = 4;
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     async function fetchData() {
       try {
         setLoading(true);
@@ -34,19 +36,7 @@ export default function HomeScreen({ navigation }) {
         // 2. Busca os livros no Firebase
         const feed = await getFeedBooks({ searchQuery: '' });
         
-        if (feed.length === 0) {
-          // Mantendo o mock de livros APENAS se o banco de livros estiver vazio para não quebrar o layout
-          setBooks([
-            { id: '1', title: 'Torto Arado', author: 'Itamar Vieira Junior', categories: ['Romance', 'Literatura Brasileira'], price: 'R$ 32', store: 'Sebo Girassol', isMock: true },
-            { id: '2', title: 'O Hobbit', author: 'J.R.R. Tolkien', categories: ['Fantasia', 'Aventura'], price: 'R$ 45', store: 'Sebo Central', isMock: true },
-            { id: '3', title: '1984', author: 'George Orwell', categories: ['Ficção', 'Distopia'], price: 'R$ 25', store: 'Sebo Central', isMock: true },
-            { id: '4', title: 'O Pequeno Príncipe', author: 'Antoine de Saint-Exupéry', categories: ['Infantil', 'Clássico'], price: 'R$ 20', store: 'Sebo Leitura', isMock: true },
-            { id: '5', title: 'Dom Casmurro', author: 'Machado de Assis', categories: ['Literatura Brasileira', 'Romance'], price: 'R$ 15', store: 'Sebo Girassol', isMock: true },
-            { id: '6', title: 'Sapiens', author: 'Yuval Noah Harari', categories: ['História', 'Não-Ficção'], price: 'R$ 50', store: 'Sebo Leitura', isMock: true },
-          ]);
-        } else {
-          setBooks(feed);
-        }
+        setBooks(feed);
       } catch (error) {
         console.error("Erro ao carregar dados da Home:", error);
       } finally {
@@ -55,7 +45,7 @@ export default function HomeScreen({ navigation }) {
     }
     
     fetchData();
-  }, []);
+  }, []));
 
   const filteredBooks = useMemo(() => {
     return books.filter(book => {
@@ -80,7 +70,7 @@ export default function HomeScreen({ navigation }) {
   const displayedBooks = showAll ? filteredBooks : filteredBooks.slice(0, INITIAL_LIMIT);
 
   let sectionTitle = "Achados na sua região";
-  let sectionSubtitle = "Livros disponíveis em sebos verificados perto de você.";
+  let sectionSubtitle = "Livros disponíveis na vitrine.";
 
   if (searchQuery.length > 0) {
     sectionTitle = `Pesquisando por "${searchQuery}"`;
@@ -100,7 +90,7 @@ export default function HomeScreen({ navigation }) {
   // Prepara as variáveis de interface com os dados reais ou um fallback enquanto carrega
   const userName = userData?.name || '';
   const userLocationString = userData 
-    ? `${userData.location?.city || 'Cidade'} - ${userData.location?.state || 'UF'} · até 10 km`
+    ? `${userData.location?.city || 'Cidade'} - ${userData.location?.state || 'UF'}`
     : 'Buscando localização...';
 
   return (
@@ -113,7 +103,7 @@ export default function HomeScreen({ navigation }) {
       />
 
       <ScrollView 
-        contentContainerStyle={[styles.scrollContent, { paddingTop: 110, paddingBottom: 90 }]} 
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 20, paddingBottom: 100 }]}
         showsVerticalScrollIndicator={false}
       >
         
@@ -127,6 +117,11 @@ export default function HomeScreen({ navigation }) {
           selectedCategory={selectedCategory}
           setSelectedCategory={setSelectedCategory}
         />
+
+        <TouchableOpacity onPress={() => navigation.navigate('Demo')} style={{ backgroundColor: '#EAF4D7', borderRadius: 12, padding: 14, marginBottom: 20 }}>
+          <Text style={{ color: '#25351C', fontWeight: 'bold' }}>Explorar catálogo de demonstração →</Text>
+          <Text style={{ color: '#52634A', marginTop: 3, fontSize: 12 }}>Exemplos separados dos anúncios reais</Text>
+        </TouchableOpacity>
 
         <Text style={styles.sectionTitle}>{sectionTitle}</Text>
         <Text style={styles.sectionSubtitle}>{sectionSubtitle}</Text>
@@ -151,15 +146,8 @@ export default function HomeScreen({ navigation }) {
                   activeOpacity={0.8}
                   onPress={() => navigation.navigate('BookDetails', { bookId: book.id })}
                 >
-                  <View style={[styles.bookImageContainer, index % 2 !== 0 && {backgroundColor: '#FFD1DC'}]}>
-                    <View style={styles.bookCoverPlaceholder}>
-                        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-                            <View style={styles.bookCoverTopLine} />
-                            <View style={styles.bookCoverDot} />
-                        </View>
-                    </View>
-                  </View>
-                  
+                  <BookCover uri={book.coverUrl} title={book.title} style={styles.bookImageContainer} />
+
                   <View style={styles.bookInfoRow}>
                     <Text style={styles.bookTitle} numberOfLines={2}>{book.title}</Text>
                     <Text style={styles.bookPrice}>

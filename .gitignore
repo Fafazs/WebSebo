@@ -4,6 +4,10 @@
 node_modules/
 env.js
 .env
+.env.*
+!.env.example
+.expo-check-*/
+server/.gemini-cache.json
 
 # Expo
 .expo/

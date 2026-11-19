@@ -1,6 +1,8 @@
 // File: src/screens/auth/LoginScreen.js
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, Alert, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import KeyboardScreen from '../../components/KeyboardScreen';
 import InputText from '../../components/InputText';
 import { loginUser, resetUserPassword } from '../../services/authService';
 import { styles } from './styles/LoginStyles';
@@ -9,6 +11,16 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const scrollRef = useRef(null);
+  const passwordY = useRef(0);
+  const passwordFocused = useRef(false);
+  const scrollToPassword = () => scrollRef.current?.scrollTo({ y: Math.max(0, passwordY.current - 100), animated: true });
+  useEffect(() => {
+    const listener = Keyboard.addListener('keyboardDidShow', () => {
+      if (passwordFocused.current) scrollToPassword();
+    });
+    return () => listener.remove();
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -40,7 +52,9 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+      <KeyboardScreen>
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
       
       {/* Botão Voltar */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
@@ -70,15 +84,19 @@ export default function LoginScreen({ navigation }) {
         value={email} 
         onChangeText={setEmail} 
         keyboardType="email-address" 
+        onFocus={() => { passwordFocused.current = false; }}
       />
       
+      <View onLayout={event => { passwordY.current = event.nativeEvent.layout.y; }}>
       <InputText 
         label="SENHA" 
         placeholder="Sua senha" 
         value={password} 
         onChangeText={setPassword} 
         secureTextEntry 
+        onFocus={() => { passwordFocused.current = true; scrollToPassword(); }}
       />
+      </View>
 
       {/* Esqueci minha senha */}
       <TouchableOpacity style={styles.forgotContainer} onPress={handleForgotPassword}>
@@ -118,6 +136,8 @@ export default function LoginScreen({ navigation }) {
         <Text style={styles.createBtnText}>Criar uma nova conta</Text>
       </TouchableOpacity>
 
+      </ScrollView>
+      </KeyboardScreen>
     </SafeAreaView>
   );
 }

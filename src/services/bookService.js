@@ -20,19 +20,32 @@ export async function uploadBookCover(localUri) {
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User not authenticated.');
 
-  const response = await fetch(localUri);
-  const blob = await response.blob();
+  let blob;
+  try {
+    const response = await fetch(localUri);
+    // React Native's local file response does not necessarily have an HTTP status.
+    if (/^https?:/i.test(localUri) && response.ok === false) throw new Error('Image request failed');
+    blob = await response.blob();
+    if (!blob || !blob.size) throw new Error('Empty image');
+  } catch {
+    throw new Error('Não foi possível ler a imagem selecionada. Escolha outra foto e tente novamente.');
+  }
 
   const filename = `books/${currentUser.uid}/${Date.now()}.jpg`;
   const storageRef = ref(storage, filename);
 
-  await uploadBytes(storageRef, blob);
-  const downloadUrl = await getDownloadURL(storageRef);
-  return downloadUrl;
+  try {
+    await uploadBytes(storageRef, blob, blob.type ? { contentType: blob.type } : undefined);
+    return await getDownloadURL(storageRef);
+  } catch (error) {
+    if (error.code === 'storage/bucket-not-found') throw new Error('O bucket do Firebase Storage não foi encontrado. Confira a configuração do projeto.');
+    if (error.code === 'storage/unauthorized') throw new Error('O Firebase Storage não autorizou o envio da foto. Confira as regras do projeto.');
+    throw new Error('Não foi possível enviar a foto. Verifique a conexão e a configuração do Firebase Storage.');
+  }
 }
 
 // RF07 (CREATE): Publish a new book ad
-export async function createBookAd({ title, author, price, condition, synopsis, categories, coverUrl }) {
+export async function createBookAd({ title, author, price, condition, synopsis, categories, coverUrl, coverIllustrative = false }) {
   const currentUser = auth.currentUser;
   if (!currentUser) throw new Error('User not authenticated.');
 
@@ -56,7 +69,8 @@ export async function createBookAd({ title, author, price, condition, synopsis, 
     condition,
     synopsis: synopsis || '',
     categories: categories || ['Geral'],
-    coverUrl: coverUrl || 'https://via.placeholder.com/300x450.png?text=Sem+Capa',
+    coverUrl: coverUrl || '',
+    coverIllustrative: Boolean(coverIllustrative),
     sellerId: currentUser.uid,
     sellerName: sellerData.storeProfile?.storeName || sellerData.name,
     sellerWhatsapp: sellerData.storeProfile?.whatsappPhone || '',
@@ -104,7 +118,10 @@ export async function getFeedBooks({ searchQuery = '', category = 'Todos', city 
 
 // RF07 (UPDATE): Edit an existing book ad
 export async function updateBookAd(bookId, updatedFields) {
-  await updateDoc(doc(db, 'books', bookId), {
+  const bookRef = doc(db, 'books', bookId);
+  const book = await getDoc(bookRef);
+  if (!auth.currentUser || !book.exists() || book.data().sellerId !== auth.currentUser.uid) throw new Error('Você não pode editar este anúncio.');
+  await updateDoc(bookRef, {
     ...updatedFields,
     updatedAt: serverTimestamp(),
   });
@@ -113,7 +130,10 @@ export async function updateBookAd(bookId, updatedFields) {
 
 // RF07 (DELETE): Delete a book ad from feed (History snapshots remain intact per RNF03)
 export async function deleteBookAd(bookId) {
-  await deleteDoc(doc(db, 'books', bookId));
+  const bookRef = doc(db, 'books', bookId);
+  const book = await getDoc(bookRef);
+  if (!auth.currentUser || !book.exists() || book.data().sellerId !== auth.currentUser.uid) throw new Error('Você não pode excluir este anúncio.');
+  await deleteDoc(bookRef);
   return true;
 }
 
