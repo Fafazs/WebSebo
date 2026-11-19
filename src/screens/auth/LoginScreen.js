@@ -5,10 +5,25 @@ import InputText from '../../components/InputText';
 import { loginUser, resetUserPassword } from '../../services/authService';
 import { styles } from './styles/LoginStyles';
 
+// Translates Firebase password-reset error codes into friendly messages (RF05)
+const getResetErrorMessage = (error) => {
+  switch (error?.code) {
+    case 'auth/invalid-email':
+      return 'O e-mail informado não é válido. Confira e tente novamente.';
+    case 'auth/too-many-requests':
+      return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
+    case 'auth/network-request-failed':
+      return 'Sem conexão com a internet. Verifique sua rede.';
+    default:
+      return 'Não foi possível enviar o e-mail de recuperação.';
+  }
+};
+
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false); // password-reset request in progress
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -27,15 +42,23 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleForgotPassword = async () => {
+    if (resetting) return; // ignore extra taps while the request is running
     if (!email.trim()) {
       Alert.alert('Recuperar Senha', 'Digite seu e-mail no campo acima e clique novamente em "Esqueci minha senha".');
       return;
     }
     try {
+      setResetting(true);
       await resetUserPassword(email);
-      Alert.alert('E-mail enviado!', `Enviamos um link para ${email.trim()}.`);
+      // Neutral wording: Firebase may not reveal whether the e-mail has an account
+      Alert.alert(
+        'Verifique seu e-mail',
+        `Se ${email.trim()} estiver cadastrado, enviamos um link para redefinir a senha. Confira também a caixa de spam.`
+      );
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível enviar o e-mail de recuperação.');
+      Alert.alert('Erro', getResetErrorMessage(error));
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -81,8 +104,8 @@ export default function LoginScreen({ navigation }) {
       />
 
       {/* Esqueci minha senha */}
-      <TouchableOpacity style={styles.forgotContainer} onPress={handleForgotPassword}>
-        <Text style={styles.forgotText}>Esqueci minha senha</Text>
+      <TouchableOpacity style={styles.forgotContainer} onPress={handleForgotPassword} disabled={resetting}>
+        <Text style={styles.forgotText}>{resetting ? 'Enviando...' : 'Esqueci minha senha'}</Text>
       </TouchableOpacity>
 
       {/* Botão Entrar */}
